@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AIChatbot } from './AIChatbot';
-import { InterviewerService } from '@/lib/interviewer';
+import { InterviewerService, EndOfTestFeedback } from '@/lib/interviewer';
 import { useAuth } from '@/contexts/AuthContext';
 import { saveInterviewHistory } from '@/lib/firestore';
 
@@ -33,6 +33,8 @@ export function InterviewSession() {
     solution: string;
     feedback: string;
   }>>([]);
+  const [showEndOfTest, setShowEndOfTest] = useState(false);
+  const [endOfTestFeedback, setEndOfTestFeedback] = useState<EndOfTestFeedback | null>(null);
 
   // Mock questions for now
   const questions: Question[] = [
@@ -87,11 +89,19 @@ Output: false`,
   const handleSubmit = async () => {
     setIsLoading(true);
     try {
+      console.log('Submitting solution for:', currentQuestion.title);
       const feedback = await interviewer.generateFeedback(
         currentQuestion.title,
         solution,
         currentQuestion.difficulty
       );
+      
+      console.log('Received feedback:', feedback);
+      
+      if (!feedback.feedback) {
+        throw new Error('No feedback received');
+      }
+      
       setFeedback(feedback.feedback);
       setShowFollowUp(true);
       
@@ -103,7 +113,7 @@ Output: false`,
       }]);
     } catch (error) {
       console.error('Error getting feedback:', error);
-      setFeedback('Error getting feedback. Please try again.');
+      setFeedback('I apologize, but I encountered an error while evaluating your solution. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -117,19 +127,17 @@ Output: false`,
       setShowFollowUp(false);
       setFollowUpQuestion(null);
     } else {
-      // Save interview history when all questions are completed
-      if (user && interviewQuestions.length > 0) {
-        try {
-          await saveInterviewHistory(user, {
-            title: 'Technical Interview',
-            questions: interviewQuestions,
-            difficulty: 'MIXED' // You could make this dynamic based on the questions
-          });
-        } catch (error) {
-          console.error('Error saving interview history:', error);
-        }
+      // Generate end-of-test feedback
+      setIsLoading(true);
+      try {
+        const feedback = await interviewer.generateEndOfTestFeedback(interviewQuestions);
+        setEndOfTestFeedback(feedback);
+        setShowEndOfTest(true);
+      } catch (error) {
+        console.error('Error generating end-of-test feedback:', error);
+      } finally {
+        setIsLoading(false);
       }
-      router.push('/');
     }
   };
 
@@ -148,6 +156,21 @@ Output: false`,
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleFinishInterview = async () => {
+    if (user && interviewQuestions.length > 0) {
+      try {
+        await saveInterviewHistory(user, {
+          title: 'Technical Interview',
+          questions: interviewQuestions,
+          difficulty: 'MIXED'
+        });
+      } catch (error) {
+        console.error('Error saving interview history:', error);
+      }
+    }
+    router.push('/');
   };
 
   return (
@@ -233,6 +256,60 @@ Output: false`,
           )}
         </Card>
       )}
+
+      <Dialog open={showEndOfTest} onOpenChange={setShowEndOfTest}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Interview Complete!</DialogTitle>
+          </DialogHeader>
+          {endOfTestFeedback && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-medium mb-2">Overall Score</h3>
+                <p className="text-2xl font-bold text-blue-600">{endOfTestFeedback.overallScore}/10</p>
+              </div>
+              
+              <div>
+                <h3 className="text-lg font-medium mb-2">Summary</h3>
+                <p className="text-gray-700">{endOfTestFeedback.summary}</p>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-medium mb-2">Strengths</h3>
+                <ul className="list-disc list-inside space-y-1 text-gray-700">
+                  {endOfTestFeedback.strengths.map((strength, index) => (
+                    <li key={index}>{strength}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-medium mb-2">Areas for Improvement</h3>
+                <ul className="list-disc list-inside space-y-1 text-gray-700">
+                  {endOfTestFeedback.areasForImprovement.map((area, index) => (
+                    <li key={index}>{area}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-medium mb-2">Recommendations</h3>
+                <ul className="list-disc list-inside space-y-1 text-gray-700">
+                  {endOfTestFeedback.recommendations.map((rec, index) => (
+                    <li key={index}>{rec}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="flex justify-end">
+                <Button onClick={handleFinishInterview}>
+                  Return to Dashboard
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 } 
