@@ -19,7 +19,7 @@ interface MainLayoutProps {
 }
 
 export function MainLayout({ children }: MainLayoutProps) {
-  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [date, setDate] = useState<Date | null>(new Date());
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -63,9 +63,8 @@ export function MainLayout({ children }: MainLayoutProps) {
             <Card className="p-4">
               <h2 className="text-lg font-semibold mb-4">Activity Calendar</h2>
               <Calendar
-                mode="single"
                 selected={date}
-                onSelect={setDate}
+                onChange={setDate}
                 className="rounded-md border"
               />
             </Card>
