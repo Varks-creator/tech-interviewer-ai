@@ -237,7 +237,10 @@ Output: false`,
         {/* Right: AI Assistant */}
         <div className="w-1/4 bg-white rounded-xl shadow p-4 h-full overflow-y-auto">
           <h2 className="text-lg font-semibold mb-4">AI Assistant</h2>
-          {/* <AIChatbot /> */}
+          <AIChatbot 
+            question={currentQuestion.title}
+            onHintRequest={handleGetFollowUp}
+          />
         </div>
       </div>
   

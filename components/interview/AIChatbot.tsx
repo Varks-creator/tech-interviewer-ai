@@ -25,6 +25,7 @@ export function AIChatbot({ question, onHintRequest }: AIChatbotProps) {
     }
   ]);
   const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -35,7 +36,7 @@ export function AIChatbot({ question, onHintRequest }: AIChatbotProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || isLoading) return;
 
     const userMessage: Message = {
       role: 'user',
@@ -44,16 +45,41 @@ export function AIChatbot({ question, onHintRequest }: AIChatbotProps) {
 
     setMessages(prev => [...prev, userMessage]);
     setInput('');
+    setIsLoading(true);
 
-    // TODO: Implement actual AI response
-    const aiResponse: Message = {
-      role: 'assistant',
-      content: 'That\'s an interesting approach. Could you explain more about how you would handle the edge cases?'
-    };
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [...messages, userMessage],
+        }),
+      });
 
-    setTimeout(() => {
+      if (!response.ok) {
+        throw new Error('Failed to get response from AI');
+      }
+
+      const data = await response.json();
+      
+      const aiResponse: Message = {
+        role: 'assistant',
+        content: data.message
+      };
+
       setMessages(prev => [...prev, aiResponse]);
-    }, 1000);
+    } catch (error) {
+      console.error('Error getting AI response:', error);
+      const errorMessage: Message = {
+        role: 'assistant',
+        content: 'I apologize, but I encountered an error. Please try again.'
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -83,6 +109,13 @@ export function AIChatbot({ question, onHintRequest }: AIChatbotProps) {
               </div>
             </div>
           ))}
+          {isLoading && (
+            <div className="flex justify-start">
+              <div className="max-w-[80%] rounded-lg p-3 bg-gray-100">
+                Thinking...
+              </div>
+            </div>
+          )}
         </div>
       </ScrollArea>
 
@@ -93,8 +126,9 @@ export function AIChatbot({ question, onHintRequest }: AIChatbotProps) {
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask a question..."
             className="flex-1"
+            disabled={isLoading}
           />
-          <Button type="submit" size="icon">
+          <Button type="submit" size="icon" disabled={isLoading}>
             <Send className="h-4 w-4" />
           </Button>
         </form>
@@ -105,6 +139,7 @@ export function AIChatbot({ question, onHintRequest }: AIChatbotProps) {
           variant="outline"
           className="w-full"
           onClick={onHintRequest}
+          disabled={isLoading}
         >
           Request Hint
         </Button>
