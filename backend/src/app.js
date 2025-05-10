@@ -1,7 +1,8 @@
 const express = require('express');
 // const userRoutes = require('./routes/userRoutes');
 const protectedRoutes = require('./routes/protectedRoutes');
-const openaiRoutes = require('./routes/aiRoutes');
+const aiRoutes = require('./routes/aiRoutes');
+const testRoutes = require('./routes/testRoutes');
 
 const app = express();
 
@@ -16,7 +17,8 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/protected', protectedRoutes);
-app.use('/api/openai', openaiRoutes); 
+app.use('/api/openai', aiRoutes); 
+app.use('/api/test', testRoutes);
 
 // 404 Handler
 app.use((req, res, next) => {
