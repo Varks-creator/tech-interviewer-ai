@@ -17,6 +17,7 @@ model User {
   firebaseId    String?        @unique
   sessions      InterviewSession[]
   assessments   Assessment[]
+  activities    UserActivity[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 }

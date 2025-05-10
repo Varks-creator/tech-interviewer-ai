@@ -17,6 +17,9 @@ interface Question {
   description: string;
   difficulty: 'EASY' | 'MEDIUM' | 'HARD';
   category: string;
+  starterCode?: string;
+  score?: number;
+  feedback?: string;
 }
 
 export function InterviewSession() {
@@ -35,6 +38,8 @@ export function InterviewSession() {
   }>>([]);
   const [showEndOfTest, setShowEndOfTest] = useState(false);
   const [endOfTestFeedback, setEndOfTestFeedback] = useState<EndOfTestFeedback | null>(null);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [difficulty, setDifficulty] = useState<'EASY' | 'MEDIUM' | 'HARD'>('EASY');
 
   // Mock questions for now
   const questions: Question[] = [
@@ -57,7 +62,13 @@ Example 3:
 Input: nums = [3,3], target = 6
 Output: [0,1]`,
       difficulty: 'EASY',
-      category: 'Arrays'
+      category: 'Arrays',
+      starterCode: `public class Solution {
+    public int[] twoSum(int[] nums, int target) {
+        // Write your solution here
+        
+    }
+}`
     },
     {
       id: '2',
@@ -79,7 +90,13 @@ Example 3:
 Input: s = "(]"
 Output: false`,
       difficulty: 'EASY',
-      category: 'Stack'
+      category: 'Stack',
+      starterCode: `public class Solution {
+    public boolean isValid(String s) {
+        // Write your solution here
+        
+    }
+}`
     }
   ];
 
@@ -175,94 +192,85 @@ Output: false`,
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      {/* Top: Main Layout (Three Panels) */}
-      <div className="flex flex-1 overflow-hidden gap-4 px-4 py-4">
+      {/* Main Layout (Three Panels) */}
+      <div className="flex flex-1 overflow-hidden gap-4 p-4">
         {/* Left: Question Panel */}
-        <div className="w-1/4 bg-white rounded-xl shadow p-4 h-full overflow-y-auto">
-          <h2 className="text-xl font-semibold mb-2">{currentQuestion.title}</h2>
+        <div className="w-1/4 bg-white rounded-xl shadow p-4 overflow-hidden">
+          <h2 className="text-base font-semibold mb-2">{currentQuestion.title}</h2>
           <div className="flex gap-2 mb-4">
-            <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm">
+            <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
               {currentQuestion.difficulty}
             </span>
-            <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-sm">
+            <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
               {currentQuestion.category}
             </span>
           </div>
-          <pre className="whitespace-pre-wrap text-[12px] text-gray-700">{currentQuestion.description}</pre>
+          <div className="overflow-y-auto h-[calc(100%-4rem)]">
+            <pre className="whitespace-pre-wrap text-xs text-gray-700">{currentQuestion.description}</pre>
+          </div>
         </div>
   
         {/* Center: Code Editor + Feedback */}
-        <div className="w-2/4 flex flex-col gap-4 h-full overflow-hidden">
-          <Card className="p-6 flex-1 overflow-hidden flex flex-col">
-            <h3 className="text-lg font-medium mb-4">Your Solution</h3>
+        <div className="w-2/4 flex flex-col gap-4 overflow-hidden">
+          <Card className="p-4 flex-1 overflow-hidden flex flex-col">
+            <h3 className="text-base font-medium mb-2">Your Solution</h3>
             <div className="flex-1 border rounded-lg overflow-hidden">
               <Editor
                 height="100%"
                 defaultLanguage="java"
                 theme="vs-dark"
-                value={solution}
+                value={solution || currentQuestion.starterCode}
                 onChange={(value) => setSolution(value || '')}
                 options={{
                   minimap: { enabled: false },
-                  fontSize: 14,
-                  lineNumbers: 'on'
+                  fontSize: 12,
+                  lineNumbers: 'on',
+                  scrollBeyondLastLine: false,
+                  automaticLayout: true
                 }}
               />
             </div>
           </Card>
   
           {feedback && (
-            <Card className="p-6 overflow-y-auto max-h-[250px]">
-              <h3 className="text-lg font-medium mb-4">Feedback</h3>
-              <p className="text-gray-700">{feedback}</p>
-  
-              {showFollowUp && !followUpQuestion && (
-                <div className="mt-4">
-                  <Button variant="outline" onClick={handleGetFollowUp} disabled={isLoading}>
-                    {isLoading ? 'Generating...' : 'Get Follow-up Question'}
-                  </Button>
-                </div>
-              )}
-  
-              {followUpQuestion && (
-                <div className="mt-4">
-                  <h4 className="font-medium mb-2">Follow-up Question:</h4>
-                  <p className="text-gray-700">{followUpQuestion}</p>
-                </div>
-              )}
+            <Card className="p-4 overflow-hidden flex flex-col">
+              <h3 className="text-base font-medium mb-2">Feedback</h3>
+              <div className="flex-1 overflow-y-auto">
+                <pre className="text-xs text-gray-700 whitespace-pre-wrap">{feedback}</pre>
+              </div>
             </Card>
           )}
         </div>
   
         {/* Right: AI Assistant */}
-        <div className="w-1/4 bg-white rounded-xl shadow p-4 h-full overflow-y-auto">
-          <h2 className="text-lg font-semibold mb-4">AI Assistant</h2>
+        <div className="w-1/4 bg-white rounded-xl shadow p-4 overflow-hidden">
+          <h2 className="text-base font-semibold mb-2">AI Assistant</h2>
           <AIChatbot 
             question={currentQuestion.title}
-            onHintRequest={handleGetFollowUp}
+            key={currentQuestionIndex}
           />
         </div>
       </div>
   
       {/* Bottom: Action Buttons */}
-      <div className="flex justify-between items-center px-6 h-16 border-t bg-white shadow shrink-0">
-        <Button variant="outline" onClick={() => router.push('/')}>
+      <div className="flex justify-between items-center px-6 h-12 border-t bg-white shadow shrink-0">
+        <Button variant="outline" onClick={() => router.push('/')} className="text-xs">
           Exit Interview
         </Button>
         {!feedback ? (
-          <Button onClick={handleSubmit} disabled={isLoading || !solution.trim()}>
+          <Button onClick={handleSubmit} disabled={isLoading || !solution.trim()} className="text-xs">
             {isLoading ? 'Submitting...' : 'Submit Solution'}
           </Button>
         ) : (
-          <Button onClick={handleNextQuestion}>
+          <Button onClick={handleNextQuestion} className="text-xs">
             {currentQuestionIndex < questions.length - 1 ? 'Next Question' : 'Finish Interview'}
           </Button>
         )}
       </div>
-  
+
       {/* End of Test Dialog */}
       <Dialog open={showEndOfTest} onOpenChange={setShowEndOfTest}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Interview Complete!</DialogTitle>
           </DialogHeader>

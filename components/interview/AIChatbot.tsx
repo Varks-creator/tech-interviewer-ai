@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Send } from 'lucide-react';
 
 interface Message {
@@ -14,10 +13,9 @@ interface Message {
 
 interface AIChatbotProps {
   question: string;
-  onHintRequest: () => void;
 }
 
-export function AIChatbot({ question, onHintRequest }: AIChatbotProps) {
+export function AIChatbot({ question }: AIChatbotProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
@@ -26,12 +24,10 @@ export function AIChatbot({ question, onHintRequest }: AIChatbotProps) {
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -86,11 +82,11 @@ export function AIChatbot({ question, onHintRequest }: AIChatbotProps) {
     <Card className="h-full flex flex-col">
       <div className="p-4 border-b">
         <h3 className="font-semibold">AI Interviewer</h3>
-        <p className="text-sm text-gray-500">Ask for hints or clarification</p>
+        <p className="text-sm text-gray-500">Ask for clarification</p>
       </div>
 
-      <ScrollArea ref={scrollAreaRef} className="flex-1 p-4">
-        <div className="space-y-4">
+      <div className="flex-1 p-4 overflow-hidden">
+        <div className="space-y-4 h-full overflow-y-auto">
           {messages.map((message, index) => (
             <div
               key={index}
@@ -116,8 +112,9 @@ export function AIChatbot({ question, onHintRequest }: AIChatbotProps) {
               </div>
             </div>
           )}
+          <div ref={messagesEndRef} />
         </div>
-      </ScrollArea>
+      </div>
 
       <div className="p-4 border-t">
         <form onSubmit={handleSubmit} className="flex gap-2">
@@ -132,17 +129,6 @@ export function AIChatbot({ question, onHintRequest }: AIChatbotProps) {
             <Send className="h-4 w-4" />
           </Button>
         </form>
-      </div>
-
-      <div className="p-4 border-t">
-        <Button
-          variant="outline"
-          className="w-full"
-          onClick={onHintRequest}
-          disabled={isLoading}
-        >
-          Request Hint
-        </Button>
       </div>
     </Card>
   );
