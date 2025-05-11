@@ -79,7 +79,7 @@ export function AIChatbot({ question }: AIChatbotProps) {
   };
 
   return (
-    <Card className="h-full flex flex-col">
+    <Card className="h-full flex flex-col rounded-lg">
       <div className="p-4 border-b">
         <h3 className="font-semibold">AI Interviewer</h3>
         <p className="text-sm text-gray-500">Ask for clarification</p>

@@ -1,21 +1,26 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Editor } from '@monaco-editor/react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { AIChatbot } from './AIChatbot';
-import { InterviewerService, EndOfTestFeedback } from '@/lib/interviewer';
-import { useAuth } from '@/contexts/AuthContext';
-import { saveInterviewHistory } from '@/lib/firestore';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Editor } from "@monaco-editor/react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { AIChatbot } from "./AIChatbot";
+import { InterviewerService, EndOfTestFeedback } from "@/lib/interviewer";
+import { useAuth } from "@/contexts/AuthContext";
+import { saveInterviewHistory } from "@/lib/firestore";
 
 interface Question {
   id: string;
   title: string;
   description: string;
-  difficulty: 'EASY' | 'MEDIUM' | 'HARD';
+  difficulty: "EASY" | "MEDIUM" | "HARD";
   category: string;
   starterCode?: string;
   score?: number;
@@ -26,26 +31,31 @@ export function InterviewSession() {
   const router = useRouter();
   const { user } = useAuth();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [solution, setSolution] = useState('');
+  const [solution, setSolution] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showFollowUp, setShowFollowUp] = useState(false);
   const [followUpQuestion, setFollowUpQuestion] = useState<string | null>(null);
-  const [interviewQuestions, setInterviewQuestions] = useState<Array<{
-    question: string;
-    solution: string;
-    feedback: string;
-  }>>([]);
+  const [interviewQuestions, setInterviewQuestions] = useState<
+    Array<{
+      question: string;
+      solution: string;
+      feedback: string;
+    }>
+  >([]);
   const [showEndOfTest, setShowEndOfTest] = useState(false);
-  const [endOfTestFeedback, setEndOfTestFeedback] = useState<EndOfTestFeedback | null>(null);
+  const [endOfTestFeedback, setEndOfTestFeedback] =
+    useState<EndOfTestFeedback | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
-  const [difficulty, setDifficulty] = useState<'EASY' | 'MEDIUM' | 'HARD'>('EASY');
+  const [difficulty, setDifficulty] = useState<"EASY" | "MEDIUM" | "HARD">(
+    "EASY"
+  );
 
   // Mock questions for now
   const questions: Question[] = [
     {
-      id: '1',
-      title: 'Two Sum',
+      id: "1",
+      title: "Two Sum",
       description: `Given an array of integers nums and an integer target, return indices of the two numbers in nums such that they add up to target.
 You may assume that each input would have exactly one solution, and you may not use the same element twice.
 
@@ -61,18 +71,18 @@ Output: [1,2]
 Example 3:
 Input: nums = [3,3], target = 6
 Output: [0,1]`,
-      difficulty: 'EASY',
-      category: 'Arrays',
+      difficulty: "EASY",
+      category: "Arrays",
       starterCode: `public class Solution {
     public int[] twoSum(int[] nums, int target) {
         // Write your solution here
         
     }
-}`
+}`,
     },
     {
-      id: '2',
-      title: 'Valid Parentheses',
+      id: "2",
+      title: "Valid Parentheses",
       description: `Given a string s containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid.
 An input string is valid if:
 1. Open brackets must be closed by the same type of brackets.
@@ -89,15 +99,15 @@ Output: true
 Example 3:
 Input: s = "(]"
 Output: false`,
-      difficulty: 'EASY',
-      category: 'Stack',
+      difficulty: "EASY",
+      category: "Stack",
       starterCode: `public class Solution {
     public boolean isValid(String s) {
         // Write your solution here
         
     }
-}`
-    }
+}`,
+    },
   ];
 
   const currentQuestion = questions[currentQuestionIndex];
@@ -106,31 +116,36 @@ Output: false`,
   const handleSubmit = async () => {
     setIsLoading(true);
     try {
-      console.log('Submitting solution for:', currentQuestion.title);
+      console.log("Submitting solution for:", currentQuestion.title);
       const feedback = await interviewer.generateFeedback(
         currentQuestion.title,
         solution,
         currentQuestion.difficulty
       );
-      
-      console.log('Received feedback:', feedback);
-      
+
+      console.log("Received feedback:", feedback);
+
       if (!feedback.feedback) {
-        throw new Error('No feedback received');
+        throw new Error("No feedback received");
       }
-      
+
       setFeedback(feedback.feedback);
       setShowFollowUp(true);
-      
+
       // Add the current question to interview history
-      setInterviewQuestions(prev => [...prev, {
-        question: currentQuestion.title,
-        solution,
-        feedback: feedback.feedback
-      }]);
+      setInterviewQuestions((prev) => [
+        ...prev,
+        {
+          question: currentQuestion.title,
+          solution,
+          feedback: feedback.feedback,
+        },
+      ]);
     } catch (error) {
-      console.error('Error getting feedback:', error);
-      setFeedback('I apologize, but I encountered an error while evaluating your solution. Please try again.');
+      console.error("Error getting feedback:", error);
+      setFeedback(
+        "I apologize, but I encountered an error while evaluating your solution. Please try again."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -139,7 +154,7 @@ Output: false`,
   const handleNextQuestion = async () => {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
-      setSolution('');
+      setSolution("");
       setFeedback(null);
       setShowFollowUp(false);
       setFollowUpQuestion(null);
@@ -147,11 +162,13 @@ Output: false`,
       // Generate end-of-test feedback
       setIsLoading(true);
       try {
-        const feedback = await interviewer.generateEndOfTestFeedback(interviewQuestions);
+        const feedback = await interviewer.generateEndOfTestFeedback(
+          interviewQuestions
+        );
         setEndOfTestFeedback(feedback);
         setShowEndOfTest(true);
       } catch (error) {
-        console.error('Error generating end-of-test feedback:', error);
+        console.error("Error generating end-of-test feedback:", error);
       } finally {
         setIsLoading(false);
       }
@@ -164,12 +181,14 @@ Output: false`,
       const question = await interviewer.generateFollowUpQuestion(
         currentQuestion.title,
         solution,
-        feedback || ''
+        feedback || ""
       );
       setFollowUpQuestion(question);
     } catch (error) {
-      console.error('Error getting follow-up question:', error);
-      setFollowUpQuestion('Error getting follow-up question. Please try again.');
+      console.error("Error getting follow-up question:", error);
+      setFollowUpQuestion(
+        "Error getting follow-up question. Please try again."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -179,91 +198,115 @@ Output: false`,
     if (user && interviewQuestions.length > 0) {
       try {
         await saveInterviewHistory(user, {
-          title: 'Technical Interview',
+          title: "Technical Interview",
           questions: interviewQuestions,
-          difficulty: 'MIXED'
+          difficulty: "MIXED",
         });
       } catch (error) {
-        console.error('Error saving interview history:', error);
+        console.error("Error saving interview history:", error);
       }
     }
-    router.push('/');
+    router.push("/");
   };
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
+    <div className="flex flex-col h-screen">
       {/* Main Layout (Three Panels) */}
-      <div className="flex flex-1 overflow-hidden gap-4 p-4">
+      <div className="flex flex-1 overflow-hidden gap-4 p-4 mt-4">
         {/* Left: Question Panel */}
-        <div className="w-1/4 bg-white rounded-xl shadow p-4 overflow-hidden">
-          <h2 className="text-base font-semibold mb-2">{currentQuestion.title}</h2>
-          <div className="flex gap-2 mb-4">
-            <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
-              {currentQuestion.difficulty}
-            </span>
-            <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
-              {currentQuestion.category}
-            </span>
+        <div className="w-1/4 bg-white rounded-xl shadow overflow-hidden">
+          <div className="p-4">
+            <h2 className="text-base font-semibold mb-2">
+              {currentQuestion.title}
+            </h2>
+            <div className="flex gap-2 mb-4">
+              <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                {currentQuestion.difficulty}
+              </span>
+              <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
+                {currentQuestion.category}
+              </span>
+            </div>
           </div>
-          <div className="overflow-y-auto h-[calc(100%-4rem)]">
-            <pre className="whitespace-pre-wrap text-xs text-gray-700">{currentQuestion.description}</pre>
+          <div className="overflow-y-auto h-[calc(100%-4rem)] px-4 pb-4">
+            <pre className="whitespace-pre-wrap text-xs text-gray-700">
+              {currentQuestion.description}
+            </pre>
           </div>
         </div>
-  
+
         {/* Center: Code Editor + Feedback */}
-        <div className="w-2/4 flex flex-col gap-4 overflow-hidden">
-          <Card className="p-4 flex-1 overflow-hidden flex flex-col">
-            <h3 className="text-base font-medium mb-2">Your Solution</h3>
-            <div className="flex-1 border rounded-lg overflow-hidden">
+        <div className="w-2/4 flex flex-col gap-4 overflow-hidden rounded-xl shadow">
+          <Card className="flex-1 overflow-hidden flex flex-col p-4">
+            <div className="text-base font-semibold mb-2">
+              <h3 className="text-base font-medium mb-2">Your Solution</h3>
+            </div>
+            <div className="flex-1 border rounded-lg overflow-hidden rounded-xl">
               <Editor
                 height="100%"
                 defaultLanguage="java"
                 theme="vs-dark"
                 value={solution || currentQuestion.starterCode}
-                onChange={(value) => setSolution(value || '')}
+                onChange={(value) => setSolution(value || "")}
                 options={{
                   minimap: { enabled: false },
                   fontSize: 12,
-                  lineNumbers: 'on',
+                  lineNumbers: "on",
                   scrollBeyondLastLine: false,
-                  automaticLayout: true
+                  automaticLayout: true,
+                  padding: { top: 10, bottom: 10 },
                 }}
               />
             </div>
           </Card>
-  
+
           {feedback && (
-            <Card className="p-4 overflow-hidden flex flex-col">
-              <h3 className="text-base font-medium mb-2">Feedback</h3>
-              <div className="flex-1 overflow-y-auto">
-                <pre className="text-xs text-gray-700 whitespace-pre-wrap">{feedback}</pre>
+            <Card className="overflow-hidden flex flex-col">
+              <div className="p-4">
+                <h3 className="text-base font-medium mb-2">Feedback</h3>
+              </div>
+              <div className="flex-1 overflow-y-auto px-4 pb-4">
+                <pre className="text-xs text-gray-700 whitespace-pre-wrap">
+                  {feedback}
+                </pre>
               </div>
             </Card>
           )}
         </div>
-  
+
         {/* Right: AI Assistant */}
-        <div className="w-1/4 bg-white rounded-xl shadow p-4 overflow-hidden">
-          <h2 className="text-base font-semibold mb-2">AI Assistant</h2>
-          <AIChatbot 
-            question={currentQuestion.title}
-            key={currentQuestionIndex}
-          />
+        <div className="w-1/4 bg-white rounded-lg shadow overflow-hidden">
+          <div className="h-full">
+            <AIChatbot
+              question={currentQuestion.title}
+              key={currentQuestionIndex}
+            />
+          </div>
         </div>
       </div>
-  
+
       {/* Bottom: Action Buttons */}
-      <div className="flex justify-between items-center px-6 h-12 border-t bg-white shadow shrink-0">
-        <Button variant="outline" onClick={() => router.push('/')} className="text-xs">
+      <div className="flex justify-between items-center px-4 h-12 border-t bg-white shrink-0 rounded-xl shadow">
+        <Button
+          variant="outline"
+          onClick={() => router.push("/")}
+          className="text-xs"
+        >
           Exit Interview
         </Button>
         {!feedback ? (
-          <Button onClick={handleSubmit} disabled={isLoading || !solution.trim()} className="text-xs">
-            {isLoading ? 'Submitting...' : 'Submit Solution'}
+          <Button
+            onClick={handleSubmit}
+            disabled={isLoading || !solution.trim()}
+            className="text-xs"
+          >
+            {isLoading ? "Submitting..." : "Submit Solution"}
           </Button>
         ) : (
           <Button onClick={handleNextQuestion} className="text-xs">
-            {currentQuestionIndex < questions.length - 1 ? 'Next Question' : 'Finish Interview'}
+            {currentQuestionIndex < questions.length - 1
+              ? "Next Question"
+              : "Finish Interview"}
           </Button>
         )}
       </div>
@@ -278,14 +321,16 @@ Output: false`,
             <div className="space-y-6">
               <div>
                 <h3 className="text-lg font-medium mb-2">Overall Score</h3>
-                <p className="text-2xl font-bold text-blue-600">{endOfTestFeedback.overallScore}/10</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {endOfTestFeedback.overallScore}/10
+                </p>
               </div>
-  
+
               <div>
                 <h3 className="text-lg font-medium mb-2">Summary</h3>
                 <p className="text-gray-700">{endOfTestFeedback.summary}</p>
               </div>
-  
+
               <div>
                 <h3 className="text-lg font-medium mb-2">Strengths</h3>
                 <ul className="list-disc list-inside space-y-1 text-gray-700">
@@ -294,16 +339,18 @@ Output: false`,
                   ))}
                 </ul>
               </div>
-  
+
               <div>
-                <h3 className="text-lg font-medium mb-2">Areas for Improvement</h3>
+                <h3 className="text-lg font-medium mb-2">
+                  Areas for Improvement
+                </h3>
                 <ul className="list-disc list-inside space-y-1 text-gray-700">
                   {endOfTestFeedback.areasForImprovement.map((area, index) => (
                     <li key={index}>{area}</li>
                   ))}
                 </ul>
               </div>
-  
+
               <div>
                 <h3 className="text-lg font-medium mb-2">Recommendations</h3>
                 <ul className="list-disc list-inside space-y-1 text-gray-700">
@@ -312,14 +359,16 @@ Output: false`,
                   ))}
                 </ul>
               </div>
-  
+
               <div className="flex justify-end">
-                <Button onClick={handleFinishInterview}>Return to Dashboard</Button>
+                <Button onClick={handleFinishInterview}>
+                  Return to Dashboard
+                </Button>
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
     </div>
-  );  
-} 
+  );
+}
