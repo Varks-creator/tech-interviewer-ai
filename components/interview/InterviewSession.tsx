@@ -14,7 +14,7 @@ import {
 import { AIChatbot } from "./AIChatbot";
 import { InterviewerService, EndOfTestFeedback } from "@/lib/interviewer";
 import { useAuth } from "@/contexts/AuthContext";
-import { saveInterviewHistory } from "@/lib/firestore";
+import { saveAssessment } from "@/lib/supabase";
 
 interface Question {
   id: string;
@@ -195,18 +195,41 @@ Output: false`,
   };
 
   const handleFinishInterview = async () => {
-    if (user && interviewQuestions.length > 0) {
+    if (user && interviewQuestions.length > 0 && endOfTestFeedback) {
       try {
-        await saveInterviewHistory(user, {
+        console.log('Preparing to save assessment:', {
+          user: user.uid,
+          questions: interviewQuestions,
+          score: endOfTestFeedback.overallScore,
+          questions_length: interviewQuestions.length
+        });
+        
+        const assessment = {
           title: "Technical Interview",
           questions: interviewQuestions,
           difficulty: "MIXED",
-        });
+          score: endOfTestFeedback.overallScore
+        };
+
+        console.log('Assessment data to save:', assessment);
+        
+        await saveAssessment(user, assessment);
+        router.push("/");
       } catch (error) {
-        console.error("Error saving interview history:", error);
+        console.error("Error saving interview history:", {
+          error,
+          message: error.message,
+          stack: error.stack,
+          errorInfo: error
+        });
       }
+    } else {
+      console.error('Missing required data:', {
+        hasUser: !!user,
+        questionsLength: interviewQuestions.length,
+        hasFeedback: !!endOfTestFeedback
+      });
     }
-    router.push("/");
   };
 
   return (
