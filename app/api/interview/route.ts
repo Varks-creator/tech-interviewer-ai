@@ -64,36 +64,36 @@ export async function POST(request: Request) {
       return NextResponse.json(parsedResponse);
     }
 
-    if (type === 'followUp') {
-      const prompt = `Based on the candidate's solution and feedback, generate a relevant follow-up question.
+    // if (type === 'followUp') {
+    //   const prompt = `Based on the candidate's solution and feedback, generate a relevant follow-up question.
       
-      Original Question: ${question}
-      Solution: ${solution}
-      Feedback: ${feedback}
+    //   Original Question: ${question}
+    //   Solution: ${solution}
+    //   Feedback: ${feedback}
       
-      Generate a follow-up question that:
-      1. Tests understanding of the solution
-      2. Explores edge cases or alternative approaches
-      3. Is specific to the candidate's implementation
+    //   Generate a follow-up question that:
+    //   1. Tests understanding of the solution
+    //   2. Explores edge cases or alternative approaches
+    //   3. Is specific to the candidate's implementation
       
-      Return only the follow-up question.`;
+    //   Return only the follow-up question.`;
 
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4-turbo-preview",
-        messages: [
-          {
-            role: "system",
-            content: "You are an experienced technical interviewer asking follow-up questions."
-          },
-          {
-            role: "user",
-            content: prompt
-          }
-        ]
-      });
+    //   const completion = await openai.chat.completions.create({
+    //     model: "gpt-4-turbo-preview",
+    //     messages: [
+    //       {
+    //         role: "system",
+    //         content: "You are an experienced technical interviewer asking follow-up questions."
+    //       },
+    //       {
+    //         role: "user",
+    //         content: prompt
+    //       }
+    //     ]
+    //   });
 
-      return NextResponse.json({ question: completion.choices[0].message.content });
-    }
+    //   return NextResponse.json({ question: completion.choices[0].message.content });
+    // }
 
     if (type === 'endOfTest') {
       const questionsSummary = questions.map((q: any, index: number) => `
