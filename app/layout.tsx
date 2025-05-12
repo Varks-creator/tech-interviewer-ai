@@ -1,5 +1,8 @@
 "use client";
 
+// layout for the app
+// children routes inherit this layout
+
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";

@@ -1,5 +1,7 @@
 'use client';
 
+// interview page
+
 import { InterviewSession } from '@/components/interview/InterviewSession';
 
 export default function InterviewPage() {
