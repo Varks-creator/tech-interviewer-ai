@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { User, LogOut } from 'lucide-react';
+import { User, LogOut, Play } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export function UserProfile() {
@@ -24,6 +24,10 @@ export function UserProfile() {
     } catch (error) {
       console.error('Error logging out:', error);
     }
+  };
+
+  const startNewInterview = () => {
+    router.push('/');
   };
 
   if (!user) return null;
@@ -42,6 +46,9 @@ export function UserProfile() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={startNewInterview}>
+          <span>Start New Interview</span>
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={handleLogout}>
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>

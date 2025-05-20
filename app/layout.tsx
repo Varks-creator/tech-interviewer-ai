@@ -23,9 +23,11 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className} suppressHydrationWarning>
         <AuthProvider>
-          <div className="min-h-screen bg-gray-50">
+          <div className="min-h-screen">
             {showNavigation && <Navigation />}
-            <main>{children}</main>
+            <main className={`bg-gradient-to-b from-blue-50 to-white ${showNavigation ? 'pt-16' : ''}`}>
+              {children}
+            </main>
           </div>
         </AuthProvider>
       </body>

@@ -2,14 +2,9 @@ import Link from 'next/link'
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 flex items-center justify-center px-4 overscroll-none">
       <div className="max-w-lg w-full text-center">
         <h1 className="text-9xl font-extrabold text-gray-700 pointer-events-none">404</h1>
-        <div className="absolute rotate-12 transform -translate-y-24">
-          <div className="bg-purple-500 text-white px-2 py-1 rounded-md shadow-lg text-sm pointer-events-none">
-            Page Not Found
-          </div>
-        </div>
         <div className="mt-5">
           <h3 className="text-2xl font-semibold text-gray-800 mb-4">
             Oops! Looks like you&apos;re lost
