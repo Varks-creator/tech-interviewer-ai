@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Editor } from "@monaco-editor/react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -20,15 +20,42 @@ interface Question {
   id: string;
   title: string;
   description: string;
-  difficulty: "EASY" | "MEDIUM" | "HARD";
+  difficulty: "Easy" | "Medium" | "Hard";
   category: string;
   starterCode?: string;
   score?: number;
   feedback?: string;
 }
 
+interface ApiQuestion {
+  id: string;
+  title: string;
+  description: string;
+  difficulty: string;
+  category: string;
+  starterCode?: string;
+}
+
+interface LeetCodeQuestion {
+  "Question ID": string;
+  "Question Title": string;
+  "Question Slug": string;
+  "Question Text": string;
+  "Topic Tagged text": string;
+  "Difficulty Level": string;
+  "Success Rate": string;
+  "total submission": string;
+  "total accepted": string;
+  Likes: string;
+  Dislikes: string;
+  Hints: string;
+  "Similar Questions ID": string;
+  "Similar Questions Text": string;
+}
+
 export function InterviewSession() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [solution, setSolution] = useState("");
@@ -47,16 +74,77 @@ export function InterviewSession() {
   const [endOfTestFeedback, setEndOfTestFeedback] =
     useState<EndOfTestFeedback | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
-  const [difficulty, setDifficulty] = useState<"EASY" | "MEDIUM" | "HARD">(
-    "EASY"
+  const [difficulty, setDifficulty] = useState<"Easy" | "Medium" | "Hard">(
+    "Easy"
   );
+  const [topic, setTopic] = useState<string>("");
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [isLoadingQuestions, setIsLoadingQuestions] = useState(true);
 
-  // Mock questions for now
-  const questions: Question[] = [
-    {
-      id: "1",
-      title: "Two Sum",
-      description: `Given an array of integers nums and an integer target, return indices of the two numbers in nums such that they add up to target.
+  useEffect(() => {
+    const difficultyParam = searchParams.get("difficulty");
+    const topicParam = searchParams.get("topic");
+
+    if (
+      difficultyParam &&
+      ["Easy", "Medium", "Hard"].includes(difficultyParam)
+    ) {
+      setDifficulty(difficultyParam as "Easy" | "Medium" | "Hard");
+    }
+    if (topicParam) {
+      setTopic(topicParam);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      setIsLoadingQuestions(true);
+      try {
+        const params = new URLSearchParams({
+          difficulty,
+          ...(topic && { topic }),
+        });
+
+        console.log("Fetching questions with params:", params.toString());
+        const response = await fetch(`/api/questions?${params.toString()}`);
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch questions");
+        }
+
+        const data: LeetCodeQuestion = await response.json();
+        console.log("Fetched question data:", data);
+
+        if (!data || !data["Question Title"]) {
+          console.error("Invalid question data received:", data);
+          throw new Error("Invalid question data received");
+        }
+
+        // Transform LeetCodeQuestion to our Question interface
+        const formattedQuestion: Question = {
+          id: data["Question ID"],
+          title: data["Question Title"],
+          description: data["Question Text"],
+          difficulty: data["Difficulty Level"] as "Easy" | "Medium" | "Hard",
+          category: data["Topic Tagged text"].split(",")[0].trim(), // Take first topic
+          starterCode: `public class Solution {
+    public boolean isSubtree(TreeNode root, TreeNode subRoot) {
+        // Write your solution here
+        
+    }
+}`,
+        };
+
+        console.log("Formatted question:", formattedQuestion);
+        setQuestions([formattedQuestion]);
+      } catch (error: any) {
+        console.error("Error fetching questions:", error);
+        // Fallback to mock questions if fetch fails
+        setQuestions([
+          {
+            id: "1",
+            title: "Two Sum",
+            description: `Given an array of integers nums and an integer target, return indices of the two numbers in nums such that they add up to target.
 You may assume that each input would have exactly one solution, and you may not use the same element twice.
 
 Example 1:
@@ -71,46 +159,67 @@ Output: [1,2]
 Example 3:
 Input: nums = [3,3], target = 6
 Output: [0,1]`,
-      difficulty: "EASY",
-      category: "Arrays",
-      starterCode: `public class Solution {
+            difficulty: "Easy",
+            category: "Arrays",
+            starterCode: `public class Solution {
     public int[] twoSum(int[] nums, int target) {
         // Write your solution here
         
     }
 }`,
-    },
-    {
-      id: "2",
-      title: "Valid Parentheses",
-      description: `Given a string s containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid.
-An input string is valid if:
-1. Open brackets must be closed by the same type of brackets.
-2. Open brackets must be closed in the correct order.
+          },
+        ]);
+      } finally {
+        setIsLoadingQuestions(false);
+      }
+    };
 
-Example 1:
-Input: s = "()"
-Output: true
+    fetchQuestions();
+  }, [difficulty, topic]);
 
-Example 2:
-Input: s = "()[]{}"
-Output: true
+  useEffect(() => {
+    console.log("Current question index:", currentQuestionIndex);
+    console.log("Questions array:", questions);
+    console.log("Current question:", questions[currentQuestionIndex]);
+  }, [currentQuestionIndex, questions]);
 
-Example 3:
-Input: s = "(]"
-Output: false`,
-      difficulty: "EASY",
-      category: "Stack",
-      starterCode: `public class Solution {
-    public boolean isValid(String s) {
-        // Write your solution here
-        
-    }
-}`,
-    },
-  ];
+  if (isLoadingQuestions) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (questions.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen">
+        <h2 className="text-2xl font-semibold mb-4">No Questions Available</h2>
+        <p className="text-gray-600 mb-4">
+          No questions found for the selected difficulty and topic.
+        </p>
+        <Button onClick={() => router.push("/")}>Return to Dashboard</Button>
+      </div>
+    );
+  }
 
   const currentQuestion = questions[currentQuestionIndex];
+  if (!currentQuestion) {
+    console.error("No current question found:", {
+      currentQuestionIndex,
+      questions,
+    });
+    return (
+      <div className="flex flex-col items-center justify-center h-screen">
+        <h2 className="text-2xl font-semibold mb-4">Error Loading Question</h2>
+        <p className="text-gray-600 mb-4">
+          There was an error loading the question. Please try again.
+        </p>
+        <Button onClick={() => router.push("/")}>Return to Dashboard</Button>
+      </div>
+    );
+  }
+
   const interviewer = InterviewerService.getInstance();
 
   const handleSubmit = async () => {
@@ -120,7 +229,7 @@ Output: false`,
       const feedback = await interviewer.generateFeedback(
         currentQuestion.title,
         solution,
-        currentQuestion.difficulty
+        currentQuestion.difficulty.toUpperCase() as "EASY" | "MEDIUM" | "HARD"
       );
 
       console.log("Received feedback:", feedback);
@@ -141,7 +250,7 @@ Output: false`,
           feedback: feedback.feedback,
         },
       ]);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error getting feedback:", error);
       setFeedback(
         "I apologize, but I encountered an error while evaluating your solution. Please try again."
@@ -197,37 +306,37 @@ Output: false`,
   const handleFinishInterview = async () => {
     if (user && interviewQuestions.length > 0 && endOfTestFeedback) {
       try {
-        console.log('Preparing to save assessment:', {
+        console.log("Preparing to save assessment:", {
           user: user.uid,
           questions: interviewQuestions,
           score: endOfTestFeedback.overallScore,
-          questions_length: interviewQuestions.length
+          questions_length: interviewQuestions.length,
         });
-        
+
         const assessment = {
           title: "Technical Interview",
           questions: interviewQuestions,
           difficulty: "MIXED",
-          score: endOfTestFeedback.overallScore
+          score: endOfTestFeedback.overallScore,
         };
 
-        console.log('Assessment data to save:', assessment);
-        
+        console.log("Assessment data to save:", assessment);
+
         await saveAssessment(user, assessment);
         router.push("/");
-      } catch (error) {
+      } catch (error: unknown) {
         console.error("Error saving interview history:", {
           error,
-          message: error.message,
-          stack: error.stack,
-          errorInfo: error
+          message: error instanceof Error ? error.message : "Unknown error",
+          stack: error instanceof Error ? error.stack : undefined,
+          errorInfo: error,
         });
       }
     } else {
-      console.error('Missing required data:', {
+      console.error("Missing required data:", {
         hasUser: !!user,
         questionsLength: interviewQuestions.length,
-        hasFeedback: !!endOfTestFeedback
+        hasFeedback: !!endOfTestFeedback,
       });
     }
   };
